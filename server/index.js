@@ -127,12 +127,20 @@ connectDB();
 // Socket.io context
 app.set('io', io);
 
+// Serve React frontend static files
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/tables', require('./routes/tableRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/bills', require('./routes/billRoutes'));
+
+// Fallback route for React Router (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 // Socket handlers
 io.on('connection', (socket) => {

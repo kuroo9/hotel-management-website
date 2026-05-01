@@ -61,7 +61,7 @@ function App() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <Router basename="/hotel-management-website/">
+        <Router>
           <Toaster
             position="top-right"
             toastOptions={{
