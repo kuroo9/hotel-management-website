@@ -1,0 +1,195 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.menu-wrap { padding: 1.5rem 0; }
+.restaurant-header { text-align: center; margin-bottom: 1.5rem; }
+.restaurant-header h1 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.restaurant-header p { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+.filter-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.filter-btn { padding: 6px 16px; font-size: 13px; border-radius: 999px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover { background: var(--color-background-secondary); }
+.filter-btn.active { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+.carousel-wrapper { position: relative; overflow: hidden; }
+.carousel-track { display: flex; gap: 16px; transition: transform 0.35s cubic-bezier(.4,0,.2,1); will-change: transform; padding: 4px 2px; }
+.card { flex: 0 0 200px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; }
+.card-img { width: 100%; height: 130px; object-fit: cover; background: var(--color-background-secondary); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.card-body { padding: 12px; }
+.card-category { font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.card-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; line-height: 1.3; }
+.card-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; margin-bottom: 10px; min-height: 36px; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.card-price { font-size: 15px; font-weight: 500; color: #BA7517; }
+.add-btn { width: 28px; height: 28px; border-radius: 50%; background: #1D9E75; border: none; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.12s; }
+.add-btn:hover { transform: scale(1.1); }
+.add-btn.added { background: #3B6D11; }
+.nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-primary); font-size: 18px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.nav-btn:hover { background: var(--color-background-secondary); }
+.nav-prev { left: 0; }
+.nav-next { right: 0; }
+.nav-btn:disabled { opacity: 0.3; cursor: default; }
+.dots { display: flex; gap: 6px; justify-content: center; margin-top: 14px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border-secondary); transition: background 0.2s, width 0.2s; cursor: pointer; }
+.dot.active { background: #1D9E75; width: 18px; border-radius: 3px; }
+.cart-bar { display: flex; align-items: center; justify-content: space-between; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 10px 16px; margin-top: 1.5rem; }
+.cart-info { font-size: 13px; color: var(--color-text-secondary); }
+.cart-total { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+.order-btn { padding: 8px 18px; background: #1D9E75; color: #fff; border: none; border-radius: var(--border-radius-md); font-size: 13px; font-weight: 500; cursor: pointer; }
+</style>
+
+<h2 class="sr-only">Restaurant menu carousel with category filters and add-to-cart</h2>
+<div class="menu-wrap">
+  <div class="restaurant-header">
+    <h1>Our Menu</h1>
+    <p>Fresh ingredients, authentic flavours</p>
+  </div>
+
+  <div class="filter-bar" id="filters"></div>
+
+  <div style="position: relative; padding: 0 44px;">
+    <button class="nav-btn nav-prev" id="prev">&#8249;</button>
+    <div class="carousel-wrapper" id="carousel-wrapper">
+      <div class="carousel-track" id="track"></div>
+    </div>
+    <button class="nav-btn nav-next" id="next">&#8250;</button>
+  </div>
+
+  <div class="dots" id="dots"></div>
+
+  <div class="cart-bar" id="cart-bar" style="display:none">
+    <div>
+      <div class="cart-info" id="cart-info">0 items</div>
+      <div class="cart-total" id="cart-total">₹0.00</div>
+    </div>
+    <button class="order-btn">View order ↗</button>
+  </div>
+</div>
+
+<script>
+const emojis = { Starters: '🥗', 'Main Course': '🍛', Drinks: '🥤', Desserts: '🍮' };
+const allItems = [
+  { name: 'Butter Chicken', category: 'Main Course', price: 18.99, desc: 'Tender chicken cooked in a rich, creamy tomato sauce.' },
+  { name: 'Vegetable Samosa', category: 'Starters', price: 6.99, desc: 'Crispy pastry filled with spiced potatoes and peas.' },
+  { name: 'Garlic Naan', category: 'Starters', price: 4.99, desc: 'Freshly baked flatbread topped with garlic and butter.' },
+  { name: 'Paneer Tikka Masala', category: 'Main Course', price: 15.99, desc: 'Grilled cottage cheese cubes in a spiced gravy.' },
+  { name: 'Mango Lassi', category: 'Drinks', price: 5.99, desc: 'Sweet and creamy yogurt drink blended with ripe mangoes.' },
+  { name: 'BBQ Pork Ribs', category: 'Main Course', price: 24.99, desc: 'Slow-cooked ribs glazed with our signature BBQ sauce.' },
+  { name: 'Buffalo Wings', category: 'Starters', price: 12.99, desc: 'Crispy chicken wings tossed in spicy buffalo sauce.' },
+  { name: 'Mac & Cheese', category: 'Starters', price: 10.99, desc: 'Creamy blend of cheddar and gruyere with a crispy crumb topping.' },
+  { name: 'New York Cheesecake', category: 'Desserts', price: 8.99, desc: 'Rich, dense vanilla cheesecake with a graham cracker crust.' },
+  { name: 'Craft IPA Beer', category: 'Drinks', price: 6.99, desc: 'Locally brewed hoppy Indian Pale Ale.' },
+  { name: 'Gulab Jamun', category: 'Desserts', price: 7.99, desc: 'Deep-fried milk dumplings soaked in sugar syrup.' },
+  { name: 'Classic Cheeseburger', category: 'Main Course', price: 14.99, desc: 'Juicy beef patty with melted cheddar, lettuce, and tomato.' },
+];
+
+let activeFilter = 'All';
+let offset = 0;
+let cart = {};
+const VISIBLE = 3;
+
+const track = document.getElementById('track');
+const dotsEl = document.getElementById('dots');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const filtersEl = document.getElementById('filters');
+
+const categories = ['All', ...new Set(allItems.map(i => i.category))];
+
+function filteredItems() {
+  return activeFilter === 'All' ? allItems : allItems.filter(i => i.category === activeFilter);
+}
+
+function maxOffset(items) {
+  return Math.max(0, items.length - VISIBLE);
+}
+
+function renderFilters() {
+  filtersEl.innerHTML = '';
+  categories.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filter-btn' + (cat === activeFilter ? ' active' : '');
+    b.textContent = (emojis[cat] ? emojis[cat] + ' ' : '') + cat;
+    b.onclick = () => { activeFilter = cat; offset = 0; renderAll(); };
+    filtersEl.appendChild(b);
+  });
+}
+
+function renderCards() {
+  const items = filteredItems();
+  track.innerHTML = '';
+  items.forEach((item, idx) => {
+    const inCart = cart[item.name] || 0;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-img">${emojis[item.category] || '🍽️'}</div>
+      <div class="card-body">
+        <div class="card-category">${item.category}</div>
+        <div class="card-name">${item.name}</div>
+        <div class="card-desc">${item.desc}</div>
+        <div class="card-footer">
+          <span class="card-price">₹${item.price.toFixed(2)}</span>
+          <button class="add-btn${inCart > 0 ? ' added' : ''}" data-idx="${idx}" title="Add to order">${inCart > 0 ? inCart : '+'}</button>
+        </div>
+      </div>`;
+    track.appendChild(card);
+  });
+  track.querySelectorAll('.add-btn').forEach(btn => {
+    btn.onclick = () => {
+      const i = filteredItems()[+btn.dataset.idx];
+      cart[i.name] = (cart[i.name] || 0) + 1;
+      renderCards();
+      updateCart();
+      applyOffset(true);
+    };
+  });
+  applyOffset(false);
+  renderDots(items);
+}
+
+function applyOffset(animate) {
+  const cardWidth = 200 + 16;
+  if (!animate) track.style.transition = 'none';
+  track.style.transform = `translateX(-${offset * cardWidth}px)`;
+  if (!animate) setTimeout(() => track.style.transition = '', 10);
+  prevBtn.disabled = offset === 0;
+  nextBtn.disabled = offset >= maxOffset(filteredItems());
+}
+
+function renderDots(items) {
+  dotsEl.innerHTML = '';
+  const total = Math.max(1, items.length - VISIBLE + 1);
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === offset ? ' active' : '');
+    d.onclick = () => { offset = i; renderCards(); };
+    dotsEl.appendChild(d);
+  }
+}
+
+function updateCart() {
+  const total = Object.entries(cart).reduce((s, [name, qty]) => {
+    const item = allItems.find(i => i.name === name);
+    return s + (item ? item.price * qty : 0);
+  }, 0);
+  const count = Object.values(cart).reduce((a, b) => a + b, 0);
+  const bar = document.getElementById('cart-bar');
+  if (count > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('cart-info').textContent = count + ' item' + (count !== 1 ? 's' : '');
+    document.getElementById('cart-total').textContent = '₹' + total.toFixed(2);
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function renderAll() {
+  renderFilters();
+  renderCards();
+}
+
+prevBtn.onclick = () => { if (offset > 0) { offset--; applyOffset(true); renderDots(filteredItems()); } };
+nextBtn.onclick = () => { if (offset < maxOffset(filteredItems())) { offset++; applyOffset(true); renderDots(filteredItems()); } };
+
+renderAll();
+</script>
