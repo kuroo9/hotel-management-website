@@ -144,7 +144,13 @@ const Menu = () => {
   };
 
   const generateQRUrl = () => {
-    return `${window.location.origin}/Ormenu.html`;
+    // For GitHub Pages deployment, use the base URL
+    // For local dev, use localhost
+    const isProduction = window.location.hostname !== 'localhost';
+    const baseUrl = isProduction 
+      ? 'https://kuroo9.github.io' 
+      : window.location.origin;
+    return `${baseUrl}/`;
   };
 
   const filtered = items.filter(item => {
